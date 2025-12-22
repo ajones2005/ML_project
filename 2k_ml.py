@@ -8,6 +8,9 @@ from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+from xgboost import XGBRegressor
+from io import StringIO
+
 
 # ========= CONFIG =========
 RATINGS_CSV = "nba2k26_ratings.csv"
@@ -100,7 +103,9 @@ def train_and_evaluate(X_train, X_test, y_train, y_test):
             n_estimators=300,
             max_depth=None,
             random_state=42
-        )
+        ),
+        "XGBoost": XGBRegressor(n_estimators=300, random_state=42)
+
     }
 
     results = {}
@@ -155,6 +160,30 @@ def plot_pred_vs_actual(model, X_test, y_test):
     plt.show()
 
 
+# save model predictions
+def save_predictions(results, X_test, y_test, feature_cols, merged):
+    """Save predictions + player details to CSV"""
+    rf = results["RandomForest"]["model"]
+    y_pred = rf.predict(X_test)
+    
+    # Get test player names (first 46 rows for demo)
+    test_players = merged.iloc[:len(y_test)].copy()
+    
+    predictions_df = pd.DataFrame({
+        "Player": test_players["Name"],
+        "Actual_2K": y_test,
+        "Predicted_2K": y_pred,
+        "Error": abs(y_test - y_pred),
+        "PER": test_players["PER"],
+        "BPM": test_players["BPM"],
+        "USG%": test_players["USG%"]
+    })
+    
+    predictions_df.to_csv("2k_predictions.csv", index=False)
+    print("Predictions saved to 2k_predictions.csv")
+
+
+
 def main():
     merged = load_and_merge(RATINGS_CSV, STATS_CSV)
     X_train, X_test, y_train, y_test, feature_cols = build_features_and_target(merged)
@@ -167,5 +196,23 @@ def main():
 
 
 if __name__ == "__main__":
+    import sys
+    from datetime import datetime
+    
+    # Auto-save with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Run and capture output
+    old_stdout = sys.stdout
+    sys.stdout = mystdout = StringIO()
     main()
+    output = mystdout.getvalue()
+    sys.stdout = old_stdout
+    
+    # Save to file
+    with open(f"output_{timestamp}.txt", "w") as f:
+        f.write(output)
+    
+    print(output)
+    print(f"\nSaved to output_{timestamp}.txt")
 
