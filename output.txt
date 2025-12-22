@@ -1,0 +1,13 @@
+Loaded 40 2K players, 735 stats rows.
+Merged dataset has 46 matched players.
+Using feature columns: ['PER', 'TS%', 'USG%', 'OWS', 'DWS', 'WS', 'WS/48', 'OBPM', 'DBPM', 'BPM', 'VORP']
+
+=== LinearRegression ===
+R2:   0.394
+MAE:  1.932
+RMSE: 2.491
+
+=== RandomForest ===
+R2:   0.726
+MAE:  1.342
+RMSE: 1.676
