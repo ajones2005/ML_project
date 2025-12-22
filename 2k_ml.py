@@ -14,9 +14,9 @@ from io import StringIO
 
 # ========= CONFIG =========
 RATINGS_CSV = "nba2k26_ratings.csv"
-STATS_CSV   = "nba_2425_stats.csv"  # or your actual stats filename
+STATS_CSV   = "nba_2425_stats.csv"  
 
-RAW_PLAYER_COL = "Player"   # this is correct based on your columns
+RAW_PLAYER_COL = "Player"   
 
 # Use the advanced metrics that actually exist in your CSV
 FEATURE_COLS_CANDIDATES = [
@@ -49,15 +49,13 @@ def clean_name_series(s: pd.Series) -> pd.Series:
 
 
 def load_and_merge(ratings_path: str, stats_path: str) -> pd.DataFrame:
-    # Load CSVs
+
     ratings = pd.read_csv(ratings_path)
     stats = pd.read_csv(stats_path)
 
-    # Clean names
     ratings["name_key"] = clean_name_series(ratings["Name"])
     stats["name_key"] = clean_name_series(stats[RAW_PLAYER_COL])
 
-    # Merge on cleaned name
     merged = pd.merge(
         ratings,
         stats,
@@ -72,7 +70,7 @@ def load_and_merge(ratings_path: str, stats_path: str) -> pd.DataFrame:
 
 
 def build_features_and_target(merged: pd.DataFrame):
-    # Keep only features that actually exist in the merged dataset
+    
     feature_cols = [c for c in FEATURE_COLS_CANDIDATES if c in merged.columns]
     if not feature_cols:
         raise ValueError(
@@ -85,7 +83,7 @@ def build_features_and_target(merged: pd.DataFrame):
     X = merged[feature_cols].astype(float)
     y = merged["Overall_Rating"].astype(float)
 
-    # Impute missing values
+    # impute missing vals
     imputer = SimpleImputer(strategy="median")
     X_imputed = imputer.fit_transform(X)
 
@@ -166,7 +164,7 @@ def save_predictions(results, X_test, y_test, feature_cols, merged):
     rf = results["RandomForest"]["model"]
     y_pred = rf.predict(X_test)
     
-    # Get test player names (first 46 rows for demo)
+    # get test players
     test_players = merged.iloc[:len(y_test)].copy()
     
     predictions_df = pd.DataFrame({
@@ -189,7 +187,6 @@ def main():
     X_train, X_test, y_train, y_test, feature_cols = build_features_and_target(merged)
     results = train_and_evaluate(X_train, X_test, y_train, y_test)
 
-    # Choose a model for plots (RandomForest by default)
     rf = results["RandomForest"]["model"]
     plot_feature_importance(rf, feature_cols)
     plot_pred_vs_actual(rf, X_test, y_test)
@@ -199,17 +196,14 @@ if __name__ == "__main__":
     import sys
     from datetime import datetime
     
-    # Auto-save with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Run and capture output
     old_stdout = sys.stdout
     sys.stdout = mystdout = StringIO()
     main()
     output = mystdout.getvalue()
     sys.stdout = old_stdout
     
-    # Save to file
     with open(f"output_{timestamp}.txt", "w") as f:
         f.write(output)
     
