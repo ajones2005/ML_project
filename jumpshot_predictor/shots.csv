@@ -1,4 +1,4 @@
-date,patch,base,release1,release2,speed,player_3pt,attempts,makes,greens 
+date,patch,base,release1,release2,speed,player_3pt,attempts,makes,greens
 2025-12-18,1.05,Curry,Kobe,Gay,3/4,92,100,68,45
 2025-12-18,1.05,Base98,RayAllen,Durant,max,88,100,62,38
 2025-12-05,1.04,SetShot25,SetShot25,Kobe,full,90,100,72,52
@@ -19,3 +19,10 @@ date,patch,base,release1,release2,speed,player_3pt,attempts,makes,greens
 2025-11-15,1.04,SetShot25,Kobe,SetShot25,max,87,100,67,39
 2025-11-10,1.04,Base98,RayAllen,Gay,3/4,90,100,62,36
 2025-11-05,1.04,Jordan,RayAllen,Durant,max,92,100,61,35
+2025-11-28,1.05,MPJ,LarryBird,Beluba,max,83,100,56,39
+2025-12-05,1.06,KD,ZachEdey,Unknown,max,90,100,68,48
+2025-09-14,1.02,Iverson,Bird,Gay,full,88,100,65,45
+2025-11-15,1.05,JuliusRandle,Unknown,Unknown,3/4,85,100,44,30
+2025-10-16,1.04,DwightPowell,Beluba,JarenJackson,max,85,100,62,43
+2025-12-23,1.06,RayAllen,Beluba,KyleKorver,3/4,89,224,145,145
+
