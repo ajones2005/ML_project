@@ -1,4 +1,4 @@
-# AGENTS.md
+# AGENTS-2.md
 
 ## Project overview
 
@@ -80,3 +80,101 @@ python3 2k_ml.py                  # outputs new jumpshot_model.pkl
 - Return consistent JSON errors: `{ "error": "human-readable message" }`
 - Use `pathlib.Path` for all file paths — no hardcoded strings
 - Do not commit retrained `.pkl` files without updating `output.txt` with a run summary
+
+
+## New Additions
+
+
+### 1. Green% must be tracked, not estimated
+
+The current formula in `add_session` estimates greens from make%:
+
+```python
+green_factor = 0.65 + (player_3pt - 85) * 0.003
+greens = round(make_pct * green_factor * attempts)
+```
+
+This is a hardcoded approximation that treats all jumpshots equally. It must be replaced with real user-tracked green counts.
+
+**Required change — `service.py` `add_session`:**
+- Make `greens` a required field. Raise `ValueError("greens is required")` if missing or empty.
+- Remove the estimation fallback entirely.
+- `shots.csv` already has a `greens` column — no schema change needed.
+```python
+# Before (remove this)
+greens_value = payload.get("greens")
+if greens_value in ("", None):
+    greens = round(make_pct * green_factor * attempts)  # estimation
+
+# After
+greens_value = payload.get("greens")
+if greens_value in ("", None):
+    raise ValueError("greens is required — count your greens each session")
+greens = _to_int(greens_value)
+```
+
+---
+
+### 2. Add `latency_score` to the exploit leaderboard
+
+The existing `exploit_score` rewards shots that outperform expected make%. It does not reward shots with wide green windows (latency tolerance). Add a separate `latency_score` column.
+
+**Required change — `meta_detector.py` `build_exploit_leaderboard`:**
+
+```python
+# Add after existing exploit_score calculation
+exploits["green_pct"] = exploits["total_greens"] / exploits["total_attempts"]
+exploits["latency_score"] = (
+    exploits["green_pct"]
+    / exploits["make_pct"].replace(0, float("nan"))  # avoid divide-by-zero
+) * np.log1p(exploits["total_attempts"])
+```
+
+- `green_pct / make_pct` — the ratio of greens to makes. High ratio = wide timing window = more latency-tolerant.
+- Multiplied by `log1p(attempts)` to weight by sample size, same as `exploit_score`.
+- Save this column to `exploit_leaderboard.csv` so `service.py` can serve it.
+**Also update `_parse_leaderboard` in `service.py`** to parse `latency_score` from the CSV and return it in `score_jumpshot` responses.
+
+---
+
+### 3. Train a second XGBoost target on `green_pct`
+
+The model in `meta_detector.py` currently trains one pipeline predicting `make_pct`. Add a second pipeline trained on `green_pct`. The residual from this model is the latency edge signal.
+
+**Required change — `meta_detector.py`:**
+
+```python
+# In run(), after training the make_pct model:
+model_green, metrics_green = train_baseline(shots, target="green_pct")
+joblib.dump(model_green, DATA_DIR / "jumpshot_green_model.pkl")
+
+shots["pred_green"] = model_green.predict(shots[CAT_COLS + NUM_COLS])
+shots["green_residual"] = shots["green_pct"] - shots["pred_green"]
+```
+
+Update `train_baseline` to accept a `target` parameter (default `"make_pct"`):
+
+```python
+def train_baseline(shots: pd.DataFrame, target: str = "make_pct") -> tuple[Pipeline, dict]:
+    X = shots[CAT_COLS + NUM_COLS]
+    y = shots[target]
+    # rest unchanged
+```
+
+Pass `green_residual` into `build_exploit_leaderboard` alongside `residual` so both signals are available per combo.
+
+**New file produced:** `jumpshot_predictor/jumpshot_green_model.pkl`
+Add this to the project structure and load it at startup in `service.py` alongside the existing model.
+
+---
+
+### Summary of files changed
+
+| File | Change |
+|------|--------|
+| `jumpshot_predictor/service.py` | Make `greens` required in `add_session`; parse + return `latency_score` and `green_residual` |
+| `jumpshot_predictor/meta_detector.py` | Add `latency_score` to leaderboard; train second model on `green_pct`; add `green_residual` column |
+| `jumpshot_predictor/exploit_leaderboard.csv` | New columns: `latency_score`, `green_pct` |
+| `jumpshot_predictor/jumpshot_green_model.pkl` | New artifact — green% baseline model |
+| `frontend/app.js` | Display `latency_score` alongside `exploit_score` in UI |
+
