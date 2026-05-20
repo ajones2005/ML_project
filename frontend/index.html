@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NBA 2K26 Jumpshot Creator</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">NBA 2K26</p>
+          <h1>Jumpshot Creator</h1>
+        </div>
+        <div class="patch-pill">
+          <span>Patch</span>
+          <strong id="latestPatch">--</strong>
+        </div>
+      </header>
+
+      <section class="metrics" aria-label="Model summary">
+        <div>
+          <span>Sessions</span>
+          <strong id="sessionCount">--</strong>
+        </div>
+        <div>
+          <span>Attempts</span>
+          <strong id="attemptCount">--</strong>
+        </div>
+        <div>
+          <span>Make Rate</span>
+          <strong id="makeRate">--</strong>
+        </div>
+        <div>
+          <span>Top Score</span>
+          <strong id="topScore">--</strong>
+        </div>
+      </section>
+
+      <section class="workbench">
+        <form id="creatorForm" class="creator-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Build</p>
+            <h2>Creator</h2>
+          </div>
+
+          <label>
+            Base
+            <select name="base" id="baseSelect"></select>
+          </label>
+          <label>
+            Release 1
+            <select name="release1" id="release1Select"></select>
+          </label>
+          <label>
+            Release 2
+            <select name="release2" id="release2Select"></select>
+          </label>
+          <label>
+            Speed
+            <select name="speed" id="speedSelect"></select>
+          </label>
+
+          <div class="range-row">
+            <label for="ratingInput">3PT Rating</label>
+            <output id="ratingOutput">92</output>
+          </div>
+          <input id="ratingInput" name="player_3pt" type="range" min="70" max="99" value="92">
+
+          <button type="submit">Analyze Jumpshot</button>
+        </form>
+
+        <section class="result-panel" aria-live="polite">
+          <div class="result-status">
+            <span id="confidenceBadge">waiting</span>
+            <strong id="recommendation">Choose a build</strong>
+          </div>
+          <div class="score-grid">
+            <div>
+              <span>Exploit Score</span>
+              <strong id="exploitScore">--</strong>
+            </div>
+            <div>
+              <span>Edge</span>
+              <strong id="edge">--</strong>
+            </div>
+            <div>
+              <span>Expected Make</span>
+              <strong id="expectedMake">--</strong>
+            </div>
+            <div>
+              <span>Recorded Make</span>
+              <strong id="actualMake">--</strong>
+            </div>
+          </div>
+          <div class="mini-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Patch</th>
+                  <th>Attempts</th>
+                  <th>Makes</th>
+                  <th>Greens</th>
+                </tr>
+              </thead>
+              <tbody id="recentSessions"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="data-band">
+        <div class="leaderboard">
+          <div class="section-title">
+            <p class="eyebrow">Ranked</p>
+            <h2>Meta Board</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Build</th>
+                  <th>Speed</th>
+                  <th>Score</th>
+                  <th>Attempts</th>
+                  <th>Green%</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="chart-panel">
+          <div class="section-title">
+            <p class="eyebrow">Impact</p>
+            <h2>Exploit Chart</h2>
+          </div>
+          <img src="/jumpshot_predictor/exploit_chart.png" alt="Top exploit score chart">
+        </div>
+      </section>
+
+      <section class="session-band">
+        <form id="sessionForm" class="session-form">
+          <div class="section-title">
+            <p class="eyebrow">Test Lab</p>
+            <h2>Add Session</h2>
+          </div>
+          <label>
+            Date
+            <input name="date" type="date">
+          </label>
+          <label>
+            Patch
+            <input name="patch" placeholder="1.06">
+          </label>
+          <label>
+            Attempts
+            <input name="attempts" type="number" min="1" value="100">
+          </label>
+          <label>
+            Makes
+            <input name="makes" type="number" min="0" value="65">
+          </label>
+          <label>
+            Greens
+            <input name="greens" type="number" min="0" placeholder="auto">
+          </label>
+          <button type="submit">Save Session</button>
+          <p id="sessionMessage" class="form-message"></p>
+        </form>
+
+        <div class="patch-panel">
+          <div class="section-title">
+            <p class="eyebrow">Patches</p>
+            <h2>Recent Movement</h2>
+          </div>
+          <div id="patchRows" class="patch-list"></div>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
+

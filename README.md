@@ -12,6 +12,31 @@ The results demonstrate that nonlinear models, particularly XGBoost, are highly 
 
 **ML-powered anomaly detection system** that identifies overpowered jumpshots and stealth patch nerfs/buffs by analyzing real player test data.
 
+## Web creator
+
+Run the local creator UI:
+
+```bash
+python3 app.py
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000
+```
+
+The web app uses the existing `jumpshot_predictor/*.csv` outputs, scores a selected jumpshot, shows the meta leaderboard and patch movement, and can append new test sessions to `jumpshot_predictor/shots.csv`.
+
+## ML dependencies
+
+The web app only needs Python's standard library. Retraining the ML model needs:
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 jumpshot_predictor/meta_detector.py
+```
+
 ## What it does
 - Trains XGBoost baseline model on jumpshot configs (base/release/speed/3PT rating)
 - Computes residuals: `actual make% - expected make%`
@@ -33,4 +58,3 @@ EXPLOIT LEADERBOARD (top 5)
 8    Jordan      Kobe      Gay   3/4      0.015203       0.114021             200            85
 5     Curry  RayAllen     Kobe  full      0.003656       0.027423             200            89
 11       KD  ZachEdey  Unknown   max      0.002142       0.009884             100            45
-
