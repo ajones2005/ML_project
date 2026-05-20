@@ -1,99 +1,124 @@
 from __future__ import annotations
 
-import json
-import mimetypes
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from typing import Any, Optional
 
-from jumpshot_predictor.service import add_session, get_summary, score_jumpshot
+from flask import Flask, jsonify, request, send_from_directory
+from pydantic import BaseModel, Field, ValidationError
+
+from jumpshot_predictor.service import add_session, get_summary, load_models, load_state, score_jumpshot
 
 
 ROOT = Path(__file__).resolve().parent
 FRONTEND_DIR = ROOT / "frontend"
+CHART_PATH = ROOT / "jumpshot_predictor" / "exploit_chart.png"
 
 
-class JumpshotHandler(BaseHTTPRequestHandler):
-    server_version = "JumpshotCreator/0.1"
+class ScoreRequest(BaseModel):
+    """Validate a jumpshot score request."""
 
-    def do_GET(self) -> None:
-        path = urlparse(self.path).path
-        if path == "/api/summary":
-            self._send_json(get_summary())
-            return
-        if path == "/api/health":
-            self._send_json({"ok": True})
-            return
-        if path == "/jumpshot_predictor/exploit_chart.png":
-            self._send_file(ROOT / "jumpshot_predictor" / "exploit_chart.png")
-            return
-        self._send_static(path)
-
-    def do_POST(self) -> None:
-        try:
-            payload = self._read_json()
-            path = urlparse(self.path).path
-            if path == "/api/jumpshot/score":
-                self._send_json(score_jumpshot(payload))
-                return
-            if path == "/api/sessions":
-                self._send_json(add_session(payload), status=HTTPStatus.CREATED)
-                return
-            self._send_json({"error": "not found"}, status=HTTPStatus.NOT_FOUND)
-        except ValueError as exc:
-            self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
-        except Exception as exc:  # pragma: no cover - defensive HTTP boundary
-            self._send_json({"error": f"server error: {exc}"}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
-
-    def log_message(self, fmt: str, *args: object) -> None:
-        print(f"{self.address_string()} - {fmt % args}")
-
-    def _read_json(self) -> dict:
-        length = int(self.headers.get("content-length", "0"))
-        if length <= 0:
-            return {}
-        raw = self.rfile.read(length).decode("utf-8")
-        return json.loads(raw)
-
-    def _send_json(self, data: dict, status: HTTPStatus = HTTPStatus.OK) -> None:
-        body = json.dumps(data, indent=2).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def _send_static(self, path: str) -> None:
-        if path in ("", "/"):
-            target = FRONTEND_DIR / "index.html"
-        else:
-            target = (FRONTEND_DIR / path.lstrip("/")).resolve()
-            if FRONTEND_DIR.resolve() not in target.parents:
-                self._send_json({"error": "not found"}, status=HTTPStatus.NOT_FOUND)
-                return
-        self._send_file(target)
-
-    def _send_file(self, target: Path) -> None:
-        if not target.exists() or not target.is_file():
-            self._send_json({"error": "not found"}, status=HTTPStatus.NOT_FOUND)
-            return
-        content_type = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
-        body = target.read_bytes()
-        self.send_response(HTTPStatus.OK)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+    base: str = Field(..., min_length=1)
+    release1: str = Field(..., min_length=1)
+    release2: str = Field(..., min_length=1)
+    speed: str = Field(..., min_length=1)
+    player_3pt: float = Field(92.0, ge=25, le=99)
 
 
-def run(host: str = "127.0.0.1", port: int = 8000) -> None:
-    server = ThreadingHTTPServer((host, port), JumpshotHandler)
-    print(f"NBA 2K26 jumpshot creator running at http://{host}:{port}")
-    server.serve_forever()
+class SessionRequest(ScoreRequest):
+    """Validate a tracked jumpshot test session request."""
+
+    attempts: int = Field(..., gt=0)
+    makes: int = Field(..., ge=0)
+    greens: int = Field(..., ge=0)
+    date: Optional[str] = None
+    patch: Optional[str] = None
+
+
+def _model_to_dict(model: BaseModel) -> dict[str, Any]:
+    """Return a Pydantic model as a plain dict across Pydantic versions."""
+    if hasattr(model, "model_dump"):
+        return model.model_dump()
+    return model.dict()
+
+
+def _validate_payload(schema: type[BaseModel]) -> dict[str, Any]:
+    """Validate request JSON against a Pydantic schema and return a dict."""
+    payload = request.get_json(silent=True) or {}
+    if hasattr(schema, "model_validate"):
+        model = schema.model_validate(payload)
+    else:
+        model = schema.parse_obj(payload)
+    return _model_to_dict(model)
+
+
+def _json_error(message: str, status: int) -> tuple[Any, int]:
+    """Build a consistent JSON error response."""
+    return jsonify({"error": message}), status
+
+
+def create_app() -> Flask:
+    """Create and configure the NBA 2K26 jumpshot creator Flask app."""
+    app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
+
+    load_state()
+    load_models()
+
+    @app.get("/api/health")
+    def health() -> Any:
+        """Return a health check response."""
+        return jsonify({"ok": True})
+
+    @app.get("/api/summary")
+    def summary() -> Any:
+        """Return current jumpshot summary, leaderboard, and patch data."""
+        return jsonify(get_summary())
+
+    @app.post("/api/jumpshot/score")
+    def score() -> Any:
+        """Score a jumpshot build from validated request data."""
+        payload = _validate_payload(ScoreRequest)
+        return jsonify(score_jumpshot(payload))
+
+    @app.post("/api/sessions")
+    def sessions() -> Any:
+        """Save a tracked test session and return its updated score."""
+        payload = _validate_payload(SessionRequest)
+        return jsonify(add_session(payload)), 201
+
+    @app.get("/jumpshot_predictor/exploit_chart.png")
+    def exploit_chart() -> Any:
+        """Serve the generated exploit chart image."""
+        return send_from_directory(CHART_PATH.parent, CHART_PATH.name)
+
+    @app.get("/")
+    def index() -> Any:
+        """Serve the frontend entry point."""
+        return send_from_directory(FRONTEND_DIR, "index.html")
+
+    @app.errorhandler(ValueError)
+    def handle_value_error(exc: ValueError) -> tuple[Any, int]:
+        """Return service validation failures as JSON."""
+        return _json_error(str(exc), 400)
+
+    @app.errorhandler(ValidationError)
+    def handle_validation_error(exc: ValidationError) -> tuple[Any, int]:
+        """Return Pydantic validation failures as JSON."""
+        return _json_error(str(exc.errors()[0]["msg"]), 400)
+
+    @app.errorhandler(404)
+    def handle_not_found(_: Exception) -> tuple[Any, int]:
+        """Return unknown routes as JSON errors for API paths."""
+        if request.path.startswith("/api/"):
+            return _json_error("not found", 404)
+        return _json_error("not found", 404)
+
+    return app
+
+
+def run(host: str = "127.0.0.1", port: int = 5000) -> None:
+    """Run the Flask development server."""
+    create_app().run(host=host, port=port, debug=False)
 
 
 if __name__ == "__main__":
     run()
-

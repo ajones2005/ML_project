@@ -43,6 +43,7 @@ function renderSummary(data) {
   byId("attemptCount").textContent = summary.total_attempts.toLocaleString();
   byId("makeRate").textContent = fmtPct(summary.make_pct);
   byId("topScore").textContent = fmtNum(summary.top_score);
+  byId("topLatencyScore").textContent = fmtNum(summary.top_latency_score);
 }
 
 function renderLeaderboard(rows) {
@@ -51,6 +52,7 @@ function renderLeaderboard(rows) {
       <td><strong>${row.base}</strong> / ${row.release1} / ${row.release2}</td>
       <td>${row.speed}</td>
       <td>${fmtNum(row.exploit_score)}</td>
+      <td>${fmtNum(row.latency_score)}</td>
       <td>${row.total_attempts}</td>
       <td>${fmtPct(row.green_pct)}</td>
     </tr>
@@ -76,9 +78,13 @@ function renderScore(data) {
   badge.textContent = data.confidence;
   byId("recommendation").textContent = data.recommendation;
   byId("exploitScore").textContent = fmtNum(data.exploit_score);
+  byId("latencyScore").textContent = fmtNum(data.latency_score);
   byId("edge").textContent = `${data.edge >= 0 ? "+" : ""}${fmtPct(data.edge)}`;
+  byId("greenEdge").textContent = `${data.green_edge >= 0 ? "+" : ""}${fmtPct(data.green_edge)}`;
   byId("expectedMake").textContent = fmtPct(data.expected_make_pct);
+  byId("expectedGreen").textContent = fmtPct(data.expected_green_pct);
   byId("actualMake").textContent = fmtPct(data.actual_make_pct);
+  byId("actualGreen").textContent = fmtPct(data.green_pct);
   byId("recentSessions").innerHTML = data.recent_sessions.length ? data.recent_sessions.map((row) => `
     <tr>
       <td>${row.date}</td>
@@ -151,4 +157,3 @@ byId("sessionForm").addEventListener("submit", async (event) => {
 boot().catch((error) => {
   byId("recommendation").textContent = error.message;
 });
-

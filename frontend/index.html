@@ -36,6 +36,10 @@
           <span>Top Score</span>
           <strong id="topScore">--</strong>
         </div>
+        <div>
+          <span>Top Latency</span>
+          <strong id="topLatencyScore">--</strong>
+        </div>
       </section>
 
       <section class="workbench">
@@ -82,16 +86,32 @@
               <strong id="exploitScore">--</strong>
             </div>
             <div>
+              <span>Latency Score</span>
+              <strong id="latencyScore">--</strong>
+            </div>
+            <div>
               <span>Edge</span>
               <strong id="edge">--</strong>
+            </div>
+            <div>
+              <span>Green Edge</span>
+              <strong id="greenEdge">--</strong>
             </div>
             <div>
               <span>Expected Make</span>
               <strong id="expectedMake">--</strong>
             </div>
             <div>
+              <span>Expected Green</span>
+              <strong id="expectedGreen">--</strong>
+            </div>
+            <div>
               <span>Recorded Make</span>
               <strong id="actualMake">--</strong>
+            </div>
+            <div>
+              <span>Recorded Green</span>
+              <strong id="actualGreen">--</strong>
             </div>
           </div>
           <div class="mini-table-wrap">
@@ -124,6 +144,7 @@
                   <th>Build</th>
                   <th>Speed</th>
                   <th>Score</th>
+                  <th>Latency</th>
                   <th>Attempts</th>
                   <th>Green%</th>
                 </tr>
@@ -166,7 +187,7 @@
           </label>
           <label>
             Greens
-            <input name="greens" type="number" min="0" placeholder="auto">
+            <input name="greens" type="number" min="0" value="42" required>
           </label>
           <button type="submit">Save Session</button>
           <p id="sessionMessage" class="form-message"></p>
@@ -184,4 +205,3 @@
     <script src="/app.js"></script>
   </body>
 </html>
-

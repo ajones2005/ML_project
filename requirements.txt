@@ -4,3 +4,6 @@ scikit-learn
 xgboost
 matplotlib
 joblib
+Flask
+pydantic
+pytest

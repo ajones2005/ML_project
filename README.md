@@ -23,14 +23,14 @@ python3 app.py
 Then open:
 
 ```text
-http://127.0.0.1:8000
+http://127.0.0.1:5000
 ```
 
 The web app uses the existing `jumpshot_predictor/*.csv` outputs, scores a selected jumpshot, shows the meta leaderboard and patch movement, and can append new test sessions to `jumpshot_predictor/shots.csv`.
 
 ## ML dependencies
 
-The web app only needs Python's standard library. Retraining the ML model needs:
+The web app uses Flask and Pydantic. Retraining the ML model also needs pandas, scikit-learn, XGBoost, matplotlib, and joblib:
 
 ```bash
 python3 -m pip install -r requirements.txt

@@ -19,7 +19,9 @@ ML_project/
     service.py                    # Inference logic — called by app.py routes
     meta_detector.py              # Detects meta jumpshots from current patch data
     jumpshot_model.pkl            # Trained model artifact (do not edit manually)
+    jumpshot_green_model.pkl      # Trained green% model artifact (do not edit manually)
     shots.csv                     # Jumpshot training data
+    community_research.csv        # Low-trust public/community reference signals
     exploit_leaderboard.csv       # Ranked exploit jumpshots
     exploit_chart.png             # Visualization of exploit data
     patch_alerts.csv              # Alerts triggered by patch changes
@@ -64,9 +66,9 @@ pip install -r requirements.txt   # install dependencies
 python3 app.py                    # start Flask dev server (default :5000)
 ```
 
-To retrain the model:
+To retrain the jumpshot models:
 ```bash
-python3 2k_ml.py                  # outputs new jumpshot_model.pkl
+python3 jumpshot_predictor/meta_detector.py
 ```
 
 ## Rules
@@ -83,6 +85,16 @@ python3 2k_ml.py                  # outputs new jumpshot_model.pkl
 
 
 ## New Additions
+
+### 0. Public research signals are reference-only
+
+Public Reddit and YouTube claims may be useful for finding combos to test, but they must not be treated as ground-truth model training rows unless they include attempts, makes, greens, patch/version, player rating, and test context.
+
+**Required handling:**
+- Store public claims in `jumpshot_predictor/community_research.csv`.
+- Mark each row with `source_quality` such as `lab` or `community`.
+- Do not append public claims directly into `shots.csv` unless they include real session counts.
+- Use community data to suggest combos to test, not to inflate exploit scores.
 
 
 ### 1. Green% must be tracked, not estimated
@@ -177,4 +189,3 @@ Add this to the project structure and load it at startup in `service.py` alongsi
 | `jumpshot_predictor/exploit_leaderboard.csv` | New columns: `latency_score`, `green_pct` |
 | `jumpshot_predictor/jumpshot_green_model.pkl` | New artifact — green% baseline model |
 | `frontend/app.js` | Display `latency_score` alongside `exploit_score` in UI |
-

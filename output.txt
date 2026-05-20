@@ -1,13 +1,24 @@
-Loaded 40 2K players, 735 stats rows.
-Merged dataset has 46 matched players.
-Using feature columns: ['PER', 'TS%', 'USG%', 'OWS', 'DWS', 'WS', 'WS/48', 'OBPM', 'DBPM', 'BPM', 'VORP']
+Real green counts loaded from shots.csv
+Loaded 26 shot sessions
 
-=== LinearRegression ===
-R2:   0.394
-MAE:  1.932
-RMSE: 2.491
+Make% baseline model trained + saved
+Make Train R2: 0.9544
+Make Test  R2: 0.2856
+Make Test MAE: 0.0439
 
-=== RandomForest ===
-R2:   0.726
-MAE:  1.342
-RMSE: 1.676
+Green% baseline model trained + saved
+Green Train R2: 0.9806
+Green Test  R2: -0.0785
+Green Test MAE: 0.0478
+
+EXPLOIT LEADERBOARD (top 5)
+1. Curry / Kobe / Gay / max - latency_score 3.509540, total_attempts 200, total_greens 90
+2. Curry / Kobe / Gay / 3/4 - latency_score 3.385956, total_attempts 200, total_greens 83
+3. Curry / RayAllen / Kobe / full - latency_score 3.294477, total_attempts 200, total_greens 82
+4. Iverson / Bird / Gay / full - latency_score 3.195083, total_attempts 100, total_greens 45
+5. Base98 / RayAllen / Durant / max - latency_score 3.093595, total_attempts 200, total_greens 70
+
+PATCH IMPACT (significant stealth changes)
+None
+
+Files saved: exploit_leaderboard.csv, patch_impact.csv, patch_alerts.csv, jumpshot_model.pkl, jumpshot_green_model.pkl, exploit_chart.png
